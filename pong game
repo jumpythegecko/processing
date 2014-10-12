@@ -1,0 +1,175 @@
+
+import processing.serial.*;
+
+import cc.arduino.*;
+
+Arduino arduino;
+
+void setup() {
+  size(650,650);
+  println(Arduino.list());
+  arduino = new Arduino(this, Arduino.list()[3], 57600);
+  for (int i = 0; i <= 13; i++)
+    arduino.pinMode(i, Arduino.INPUT);
+}
+
+boolean gameStart = false;
+float aix = 25;
+float aiy = 325;
+float bx = 325;
+float by = 325;
+float speedx = random(4,6);
+float speedy = random(-10,10);
+color c = 150;
+int buttonPinU = 6;
+int buttonPinD = 5;
+int buttonPinS = 7;
+int py = 325;
+float r = 7;
+int q = 0;
+int ps = 0;
+int ais = 0;
+
+void draw() {
+    background(c);
+    textSize(30);
+    text(ais,60,35);
+    text(ps,570,35);
+    fill(255,0,0);
+    stroke(255,0,0);
+    rect(600,py-75,25,150,10);
+    rect(aix,aiy-75,25,150,10);
+    ellipse(bx,by,30,30);
+    if(by>aiy) {
+      aiy = aiy + 5;
+    }
+    if(by<aiy) {
+      aiy = aiy - 5;
+    }
+    int digitalValueD = arduino.digitalRead(buttonPinD);
+      if(digitalValueD == Arduino.LOW) { 
+        if(py<650) {
+          py = py+15;
+        }
+    }
+    int digitalValueU = arduino.digitalRead(buttonPinU);
+      if(digitalValueU == Arduino.LOW) { 
+        if(py>0) {
+          py = py-15;
+        }
+    }
+    int digitalValueS = arduino.digitalRead(buttonPinS);
+      if(digitalValueS == Arduino.LOW && q==0) { 
+        gameStart = !gameStart;
+        speedx = random(4,6);
+        speedy = random(-10,10);
+        q = 1;
+        if(by>aiy) {
+          aiy = aiy + random(r-2,r);
+        }
+        if(by<aiy) {
+          aiy = aiy - random(r-2,r);
+        }
+      } 
+  if(gameStart) {
+    rect(600,py-75,25,150,10);
+    rect(aix,aiy-75,25,150,10);
+    ellipse(bx,by,30,30);
+    bx = bx + speedx;
+    by = by + speedy;
+    if(by>=635) {
+      speedy = speedy * -1;
+    }
+      if(by<=15) {
+      speedy = speedy * -1;
+    }
+    if(bx>=585 && by>py-75 && by<py+75) {
+      speedx = speedx * -1;
+      speedx = speedx - .75;
+      if(r<12) {
+        r = r + 1;
+      }
+      if(by>py && by<=py+25) {
+        speedy = 6;
+      }
+      if(by>py+25 && by<=py+50) {
+        speedy = 13;
+      }
+      if(by>py+50 && by<=py+75) {
+        speedy = 20;
+      }
+      if(by<py && by>=py-25) {
+        speedy = -6;
+      }
+      if(by<py-25 && by>=py-50) {
+        speedy = -13;
+      }
+      if(by<py-50 && by>=py-75) {
+        speedy = -20;
+      }
+    }
+    if(bx<=65 && by>aiy-75 && by<aiy+75) {
+      speedx = speedx * -1;
+      speedx = speedx + .25;
+      if(by>aiy && by<=aiy+25) {
+        speedy = 6;
+      }
+      if(by>aiy+25 && by<=aiy+50) {
+        speedy = 13;
+      }
+      if(by>aiy+50 && by<=aiy+75) {
+        speedy = 20;
+      }
+      if(by<aiy && by>=aiy-25) {
+        speedy = -6;
+      }
+      if(by<aiy-25 && by>=aiy-50) {
+        speedy = -13;
+      }
+      if(by<aiy-50 && by>=aiy-75) {
+        speedy = -20;
+      }
+        
+    }
+    if(bx>=645) {
+      textSize(45);
+      text("You Loose...", 200,100);
+      speedx = 0;
+      speedy = 0;
+      bx = 350;
+      by = 350;
+      gameStart = !gameStart;
+      c = c - 30;
+      r = 7;
+      q = 0;
+      ais = ais+1;
+    }
+    if(bx<=15) {
+      textSize(45);
+      speedx = 0;
+      speedy = 0;
+      bx = 350;
+      by = 350;
+      gameStart = !gameStart;
+      text("You Win!",200,100);
+      c = c + 30; 
+      r = 7;
+      q = 0;
+      ps = ps+1;
+    }
+    if(by>aiy) {
+      aiy = aiy + random(r-2,r);
+    }
+    if(by<aiy) {
+      aiy = aiy - random(r-2,r);
+    }
+  }
+  if(ais>=4){
+    textSize(45);
+    text("you lose...",200,100);
+  }
+}
+
+void mousePressed() {
+  q = 0;
+}
