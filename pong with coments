@@ -1,0 +1,178 @@
+
+import processing.serial.*;     //this library lets processing and arduino comunicate
+
+import cc.arduino.*;     //imports the arduino library, also has the Arduino class
+
+Arduino arduino;     //creates a new arduino object
+
+void setup() {
+  size(650, 650);
+  println(Arduino.list());
+  arduino = new Arduino(this, Arduino.list()[3], 57600);
+  for (int i = 0; i <= 13; i++)     //creates 13 input pins for the 13 arduino pins
+    arduino.pinMode(i, Arduino.INPUT);
+}          
+
+boolean gameStart = false;
+float aix = 25;     //ai is the computer
+float aiy = 325;
+float bx = 325;     //ball
+float by = 325;
+float speedx = random(4, 6);
+float speedy = random(-10, 10);
+color c = 150;     //background color
+int buttonPinU = 6;
+int buttonPinD = 5;     //input pins
+int buttonPinS = 7;
+int py = 325;
+float r = 7;     //speed for the ai
+int q = 0;
+int ps = 0;     //player score
+int ais = 0;     //ai score
+
+void draw() {
+  background(c);
+  textSize(30);
+  text(ais, 60, 35);     //displays ai score
+  text(ps, 570, 35);     //displays player score
+  fill(255, 0, 0);
+  stroke(255, 0, 0);
+  rect(600, py-75, 25, 150, 10);     //makes the paddles
+  rect(aix, aiy-75, 25, 150, 10);
+  ellipse(bx, by, 30, 30);     //ball
+  if (by>aiy) {
+    aiy = aiy + 5;     //moves the ai to the ball before starting
+  }
+  if (by<aiy) {
+    aiy = aiy - 5;
+  }
+  int digitalValueD = arduino.digitalRead(buttonPinD);     //this line declares this input as a button
+  if (digitalValueD == Arduino.LOW) { 
+    if (py<650) {
+      py = py+15;     //button for going down
+    }
+  }
+  int digitalValueU = arduino.digitalRead(buttonPinU);
+  if (digitalValueU == Arduino.LOW) { 
+    if (py>0) {
+      py = py-15;     //button for going up
+    }
+  }
+  int digitalValueS = arduino.digitalRead(buttonPinS);
+  if (digitalValueS == Arduino.LOW && q==0) { 
+    gameStart = !gameStart;
+    speedx = random(4, 6);
+    speedy = random(-10, 10);     //button to start a new round
+    q = 1;
+    if (by>aiy) {
+      aiy = aiy + random(r-2, r);     //I can't remember what this does
+    }
+    if (by<aiy) {
+      aiy = aiy - random(r-2, r);     //seriously
+    }
+  } 
+  if (gameStart) {
+    rect(600, py-75, 25, 150, 10);
+    rect(aix, aiy-75, 25, 150, 10);     //for some reason I decided to draw the paddles twice. oops.
+    ellipse(bx, by, 30, 30);
+    bx = bx + speedx;     //moves the ball
+    by = by + speedy;
+    if (by>=635) {
+      speedy = speedy * -1;     //bounce ball off bottom
+    }
+    if (by<=15) {
+      speedy = speedy * -1;     //bounce ball off top
+    }
+    if (bx>=585 && by>py-75 && by<py+75) {     //if ball hits player paddle
+      speedx = speedx * -1;
+      speedx = speedx - .75;
+      if (r<12) {
+        r = r + 1;     //raises the speed at which the ai can play
+      }
+      if (by>py && by<=py+25) {
+        speedy = 6;
+      }
+      if (by>py+25 && by<=py+50) {
+        speedy = 13;
+      }
+      if (by>py+50 && by<=py+75) {
+        speedy = 20;
+      }
+      //these 6 if statements make the ball bounce diffrently depending on where it hits the player paddle
+      if (by<py && by>=py-25) { 
+        speedy = -6;
+      }
+      if (by<py-25 && by>=py-50) {
+        speedy = -13;
+      }
+      if (by<py-50 && by>=py-75) {
+        speedy = -20;
+      }
+    }
+    if (bx<=65 && by>aiy-75 && by<aiy+75) {     //if ball hits ai paddle
+      speedx = speedx * -1;
+      speedx = speedx + .25;
+      if (by>aiy && by<=aiy+25) {
+        speedy = 6;
+      }
+      if (by>aiy+25 && by<=aiy+50) {     //yadda yadda bounce stuff
+        speedy = 13;
+      }
+      if (by>aiy+50 && by<=aiy+75) {
+        speedy = 20;
+      }
+      if (by<aiy && by>=aiy-25) {
+        speedy = -6;
+      }
+      if (by<aiy-25 && by>=aiy-50) {
+        speedy = -13;
+      }
+      if (by<aiy-50 && by>=aiy-75) {
+        speedy = -20;
+      }
+    }
+    if (bx>=645) {     //if the ball hits the edge on player side
+      //it then stops the round, adds to ai score
+      speedx = 0;
+      speedy = 0;
+      bx = 350;     //resets ball pos
+      by = 350;
+      gameStart = !gameStart;     //this turns the var gameStart to false, not allowing the game to be played
+      c = c - 30;     //changes color of background, so is is visually easy and quick to see who is winning
+      //lighter means the player is winning, and darker means the ai is winning. THE DARK SIDE IS MORE POWERFULL
+      r = 7;     //resets the other vars
+      q = 0;
+      ais = ais+1;
+    }
+    if (bx<=15) {     //if ball hits edge on ai side
+      //it stops the round, adds to player score
+      speedx = 0;
+      speedy = 0;
+      bx = 350;
+      by = 350;
+      gameStart = !gameStart;
+      c = c + 30; 
+      r = 7;
+      q = 0;
+      ps = ps+1;
+    }
+    if (by>aiy) {
+      aiy = aiy + random(r-2, r);     //moves the ai paddle twords the ball at "r" speed
+    }
+    if (by<aiy) {
+      aiy = aiy - random(r-2, r);
+    }
+  }
+  if (ais>=4) {     //if ai gets 4 points, it wins
+    textSize(45);
+    text("you lose...", 200, 100);
+  }
+  if (ps>=4) {     //if player gets 4 points, s/he wins
+    textSize(45);
+    text("You Win!!!", 200, 100);
+  }
+}
+
+void mousePressed() {
+  q = 0;     //restart the whole program
+}
